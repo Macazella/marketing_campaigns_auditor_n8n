@@ -1,0 +1,176 @@
+{
+  "name": "Flujo Marketing Formulario",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "webhook_form",
+      "name": "Webhook Formulario",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json[\"email\"].match(/@/) !== null}}"
+            }
+          ]
+        }
+      },
+      "id": "validar_email",
+      "name": "Validar Email",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "card",
+        "operation": "create",
+        "name": "={{$json[\"nombre\"]}}",
+        "boardId": "tu_board_id",
+        "listId": "tu_list_id"
+      },
+      "id": "crear_trello",
+      "name": "Crear tarjeta Trello",
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        500,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "sheetId": "tu_google_sheet_id",
+        "range": "Solicitudes!A1"
+      },
+      "id": "guardar_sheet",
+      "name": "Guardar en Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [
+        700,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "notificaciones@empresa.com",
+        "toEmail": "={{$json[\"email\"]}}",
+        "subject": "Solicitud recibida",
+        "text": "Tu solicitud fue procesada con \u00e9xito."
+      },
+      "id": "confirmar_email",
+      "name": "Confirmaci\u00f3n por Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        900,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "statusCode": 200,
+        "sendData": true,
+        "data": "{\"mensaje\": \"Solicitud procesada correctamente.\"}"
+      },
+      "id": "respuesta_exitosa",
+      "name": "Respuesta HTTP Exitosa",
+      "type": "n8n-nodes-base.httpResponse",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "notificaciones@empresa.com",
+        "toEmail": "={{$json[\"email\"]}}",
+        "subject": "Error en la solicitud",
+        "text": "El email proporcionado no es v\u00e1lido. Por favor, revisalo."
+      },
+      "id": "email_invalido",
+      "name": "Alerta Email Inv\u00e1lido",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        500,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "statusCode": 400,
+        "sendData": true,
+        "data": "{\"error\": \"Email inv\u00e1lido\"}"
+      },
+      "id": "respuesta_error",
+      "name": "Respuesta HTTP Error",
+      "type": "n8n-nodes-base.httpResponse",
+      "typeVersion": 1,
+      "position": [
+        700,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Formulario": {
+      "main": [
+        [
+          "Validar Email"
+        ]
+      ]
+    },
+    "Validar Email": {
+      "main": [
+        [
+          "Crear tarjeta Trello"
+        ],
+        [
+          "Alerta Email Inv\u00e1lido"
+        ]
+      ]
+    },
+    "Crear tarjeta Trello": {
+      "main": [
+        [
+          "Guardar en Google Sheet"
+        ]
+      ]
+    },
+    "Guardar en Google Sheet": {
+      "main": [
+        [
+          "Confirmaci\u00f3n por Email"
+        ]
+      ]
+    },
+    "Confirmaci\u00f3n por Email": {
+      "main": [
+        [
+          "Respuesta HTTP Exitosa"
+        ]
+      ]
+    },
+    "Alerta Email Inv\u00e1lido": {
+      "main": [
+        [
+          "Respuesta HTTP Error"
+        ]
+      ]
+    }
+  }
+}
